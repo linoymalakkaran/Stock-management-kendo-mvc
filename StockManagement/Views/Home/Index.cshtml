@@ -1,0 +1,221 @@
+﻿@model StockManagement.Models.CategoryList
+@{
+    ViewBag.Title = "Home Page";
+}
+
+
+@using (Html.BeginForm("Index", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+
+    <div class="container">
+        <div class="row">
+
+            <div class="col-md-4">
+                <div class="panel-group" id="accordion">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">
+                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Drag and Drop - Tree view
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseOne" class="panel-collapse collapse in">
+                            <div class="panel-body">
+                                <div id="example" class="k-content">
+                                    <div class="demo-section k-header" style="width: 200px; background-color: white !important;">
+                                        <div id="treeview"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- /col -->
+            <div class="col-md-8">
+                <div class="well">
+                    <div class="input-group">
+                        <input type="file" class="form-control" name="file" />
+                        <div class="input-group-btn">
+
+                            <input type="submit" name="command" class="btn btn-primary" value="Import" />
+                            <input type="submit" onclick="save()" class="btn btn-default" name="command" value="Save To DB" />
+                            <input type="button" onclick="printContent()" class="btn btn-default" name="command" value="Print" />
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr>
+                <form>
+
+
+                    @if (Model != null && Model.Categories != null)
+                    {
+                        foreach (var category in Model.Categories)
+                        {
+                        <div class="form-group col-md-6">
+                            @Html.LabelFor(m => category.Id)
+                            @Html.TextBoxFor(m => category.Id, new { Value = category.Id, @class = "form-control" })
+                        </div>
+                    
+                        <div class="form-group  col-md-6">
+                            @Html.LabelFor(m => category.Name)
+                            @Html.TextBoxFor(m => category.Name, new { Value = category.Name, @class = "form-control" })
+                        </div>
+                        }
+                    }
+                </form>
+
+                @if (Model != null && Model.Categories != null)
+                {
+                    <form class="form-horizontal">
+
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a data-toggle="tab" href="#grid">Excel Grid View</a></li>
+                            <li><a data-toggle="tab" href="#home">Thumbnails</a></li>
+                        </ul>
+
+                        <div class="tab-content">
+
+                            <div id="grid" class="tab-pane fade in active" >
+                                <p id="printContent">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Id</th>
+                                                <th>Firstname</th>
+                                                <th>Email</th>
+                                                <th>Category</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var category in Model.Categories)
+                                            {
+                                                <tr>
+                                                    <td>@category.Id</td>
+                                                    <td>@category.Name</td>
+                                                    <td>@category.Email</td>
+                                                    <td>@category.Type</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </p>
+                            </div>
+
+                            <div id="home" class="tab-pane fade">
+                                <p>
+
+                                    @foreach (var category in Model.Categories)
+                                    {
+                                        <div class="col-md-3">
+                                            @category.Email
+                                        </div>
+                                    }
+
+                                </p>
+                            </div>
+
+                        </div>
+                    </form>
+                }
+            </div>
+            <!-- /col -->
+
+
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function () {
+        function onSelect(e) {
+            //kendoConsole.log("Selecting: " + this.text(e.node));
+        }
+
+        function onCheck(e) {
+            //kendoConsole.log("Checkbox changed :: " + this.text(e.node));
+        }
+
+        function onChange(e) {
+            //kendoConsole.log("Selection changed");
+        }
+
+        function onCollapse(e) {
+            
+            //kendoConsole.log("Collapsing " + this.text(e.node));
+        }
+
+        function onExpand(e) {
+          
+            //kendoConsole.log("Expanding " + this.text(e.node));
+        }
+
+        function onDragStart(e) {
+            //kendoConsole.log("Started dragging " + this.text(e.sourceNode));
+        }
+
+        function onDrag(e) {
+            //kendoConsole.log("Dragging " + this.text(e.sourceNode));
+        }
+
+        function onDrop(e) {
+            var r = confirm("Do you want to save changes in dataBase");
+            if (r == true) {
+                var dsdata = $("#treeview").data("kendoTreeView").dataSource.data();
+                var sendData = JSON.stringify(dsdata);
+                $.ajax({
+                    type: "POST",
+                    data: sendData,
+                    url: "Home/updateDB",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (data) {
+                        alert("Database updated successfully");
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert("Error while updating data base...!");
+                    }
+                });
+            }
+        }
+
+        function onDragEnd(e) {
+            //kendoConsole.log("Finished dragging " + this.text(e.sourceNode));
+        }
+
+        function onNavigate(e) {
+            //kendoConsole.log("Navigate " + this.text(e.node));
+        }
+       
+        
+        $.ajax({
+            type: "GET",
+            url: "Home/getTreeViewData",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                $("#treeview").kendoTreeView({
+                    checkboxes: true,
+                    dataSource: data,
+                    select: onSelect,
+                    check: onCheck,
+                    change: onChange,
+                    collapse: onCollapse,
+                    expand: onExpand,
+                    dragAndDrop: true,
+                    /* drag & drop events */
+                    dragstart: onDragStart,
+                    drag: onDrag,
+                    drop: onDrop,
+                    dragend: onDragEnd,
+                    navigate: onNavigate
+                });
+            }
+        });
+
+    });
+</script>
+<script src="~/Scripts/custom.js"></script>
